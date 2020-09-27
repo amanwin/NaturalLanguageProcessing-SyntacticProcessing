@@ -27,9 +27,9 @@ Now that we understand the basic idea of syntactic processing, let's study the d
 ### Parsing
 A key task in syntactical processing is **parsing**. It means to break down a given sentence into its 'grammatical constituents'. Parsing is an important step in many applications which helps us better understand the linguistic structure of sentences.
 
-Let’s understand parsing through an example. Let's say you ask a question answering (QA) system, such as Amazon's Alexa or Apple's Siri, the following question: "Who won <u>the cricket world cup in 2015</u>?"
+Let’s understand parsing through an example. Let's say you ask a question answering (QA) system, such as Amazon's Alexa or Apple's Siri, the following question: "Who won <ins>the cricket world cup in 2015</ins>?"
 
-The QA system can respond meaningfully only if it can understand that the phrase <u>'cricket world cup'</u> is related to the phrase 'in 2015'. The phrase <u>'in 2015'</u> refers to a specific time frame, and thus modifies the question significantly. Finding such dependencies or relations between the phrases of a sentence can be achieved using parsing techniques.
+The QA system can respond meaningfully only if it can understand that the phrase <ins>'cricket world cup'</ins> is related to the phrase 'in 2015'. The phrase <ins>'in 2015'</ins> refers to a specific time frame, and thus modifies the question significantly. Finding such dependencies or relations between the phrases of a sentence can be achieved using parsing techniques.
 
 Let's take another example sentence to understand how a parsed sentence looks like: "The quick brown fox jumps over the table". The figure given below shows the three main constituents of this sentence. Note that actual parse trees are different from the simplified representation below.
 
@@ -351,3 +351,344 @@ Though you’ll learn RNNs in detail later in the Neural Network course, this se
 ![title](img/rnn.JPG)
 
 We will study RNNs in much more detail in the Neural Networks course. 
+
+## Parsing
+
+### Introduction
+In the previous session, we had mentioned that there are three broad levels of syntactic processing:
+* Part-of-speech tagging
+* Constituency parsing
+* Dependency parsing
+ 
+You have studied POS tagging in detail, though that is not enough for understanding the complex grammatical structures and ambiguities in sentences which most human languages comprise of.
+
+Therefore, we need to learn techniques which can help us understand the grammatical structures of complex sentences. **Constituency parsing** and **dependency parsing** can help us achieve that.
+
+### Why Shallow Parsing is Not Sufficient
+Shallow parsing, as the name implies, refers to fairly shallow levels of parsing such as POS tagging, chunking, etc. (you will learn chunking in the next session). But such techniques would not be able to check the grammatical structure of the sentence, i.e. whether a sentence is grammatically correct, or understand the dependencies between words in a sentence.
+
+Let's see why deeper parsing techniques are required.
+
+![title](img/shallow_parsing.JPG)
+
+Thus, POS tagging will although help us identify the linguistic role of the word in a sentence, it wouldn't enable us to understand how these words are related to each other in a sentence.
+
+In the next few segments, you'll learn about **constituency** and **dependency parsers**.
+
+### Constituency Grammars
+To deal with the complexity and ambiguity of natural language, we first need to identify and define commonly observed grammatical patterns. 
+
+The first step in understanding grammar is to divide a sentence into **groups of words** called **constituents** based on their grammatical role in the sentence.
+
+To start with, let's take an example sentence: “<ins>The fox  ate the squirrel</ins>.”
+
+Each underlined group of words represents a grammatical unit or a constituent - "The fox" represents a noun phrase, "ate" represents a verb phrase, "the squirrel" is another noun phrase.
+
+In the upcoming few lectures, you will study how **constituency parsers** can 'parse' the grammatical structure of sentences. Let's first understand the concept of **constituents**.
+
+![title](img/constituency_parsing.JPG)
+
+![title](img/phrases.JPG)
+
+Let's understand the concept of constituencies in a little more detail. Consider the following two sentences:
+* <ins>'Ram<ins>   <ins>read</ins>   <ins>an article on data science'</ins>
+* <ins>'Shruti</ins>    <ins>ate</ins>    <ins>dinner'</ins> 
+
+The underlined groups of words form a constituent (or a phrase). The rationale for clubbing these words in a single unit is provided by the notion of **substitutability**, i.e., a constituent can be replaced with another equivalent constituent while keeping the sentence **syntactically valid**.
+
+For example, replacing the constituency 'an article on data science' (a noun phrase) with 'dinner' (another noun phrase) doesn't affect the syntax of the sentence, though the resultant sentence "Ram read dinner" is semantically meaningless.
+
+Most common constituencies in English are Noun Phrases (NP), Verb Phrases (VP), and Prepositional Phrases (PP). The following table summarises these phrases:
+
+![title](img/phrases1.JPG)
+
+There are various other types of phrases, such as an **adverbial phrase**, a **nominal** (N), etc., though in most cases you will need to work with only the above three phrases along with the nominal (introduced in a later segment).
+
+### Context-Free Grammars
+The most commonly used technique to organize sentences into constituencies is **Context-Free Grammars or CFGs**. CFGs define a set of **grammar rules** (or productions) which specify how words can be grouped to form constituents such as noun phrases, verb phrases, etc.
+
+Let us see the elements of a context-free grammar.
+
+![title](img/cfg.JPG)
+
+![title](img/cfg1.JPG)
+
+To summarise, a context-free grammar is a series of production rules. Let’s understand production rules using some examples. The following production rule says that a noun phrase can be formed using either a determiner (DT) followed by a noun (N) or a noun phrase (NP) followed by a prepositional phrase (PP). :
+
+NP -> DT N | NP PP
+
+Some example phrases that follow this production rule are:<br/>
+* The/DT man/N
+* <ins>The/DT man/N over/P the/DT bridge/N</ins>
+
+Both of the above are noun phrases NP. The man is a noun phrase that follows the first rule:
+NP -> DT N.
+
+The second phrase (<ins>The man</ins>  <ins>over the bridge</ins>) follows the second rule:
+NP -> NP PP
+
+It has a noun phrase (<ins>The man</ins>) and a prepositional phrase (<ins>over the bridge</ins>).
+
+In this way, using grammar rules, you can parse sentences into different constituents. In general, any production rule can be written as A -> B C, where A is a **non-terminal** symbol (NP, VP, N etc.) and B and C are either non-terminals or **terminal symbols** (i.e. words in vocabulary such as flight, man etc.). 
+
+Some other examples of commonly observed production rules in English grammar are provided in the table below. Note that a nominal (Nom) refers to an entity such as morning, flight etc. which commonly follows the rule Nominal > Nominal Noun. There is a subtle difference and a significant overlap between a nominal (Nom) and a noun (NN), you may read more about it here(https://en.wikipedia.org/wiki/Nominal_group_(functional_grammar), though you need not worry much about these nuances.
+
+The symbol S represents an entire sentence.
+
+![title](img/production_rule.JPG)
+
+Further, there are two broad approaches for parsing sentences using CFGs:
+1. **Top-down**: Start from the starting symbol S and produce each word in the sentence
+2. **Bottom-up**: Start from the individual words and reduce them to the sentence S
+
+### Top-Down Parsing
+Until now, we have learnt about the basics of phrases, CFGs and how CFGs can be used for parsing sentences. Let's now study algorithms for parsing. There are two broad approaches for parsing:
+1. **Top-down**: Start from the starting symbol S and produce each word in the sentence
+2. **Bottom-up**: Start from the individual words and reduce them to the sentence S
+
+You have studied that CFGs define what are called grammar or **production rules** of the form A > BC. Both parsing techniques use these rules to create parse trees. 
+
+Let's first study **top-down parsing**.
+
+![title](img/cfg2.JPG)
+
+![title](img/cfg3.JPG)
+
+![title](img/cfg4.JPG)
+
+To summarise, top-down parsing starts with the start symbol S at the top and uses the production rules to parse each word one by one. You continue to parse until all the words have been allocated to some production rule. 
+
+The figure below shows all the paths the parser tried for parsing "The man saw dogs".
+
+![title](img/cfg3.JPG)
+
+In the process, you often encounter **dead ends**, i.e. points where no production rule can be applied to produce a right-hand side from the left-hand side. In such cases, the algorithm needs to **backtrack** and try some other rule.
+
+Let's understand this through an example of a simple sentence and production rules.
+
+![title](img/cfg5.JPG)
+
+The sentence couldn’t be parsed using the left side of the tree since it reached a dead end. On the other hand, the grammar used on the right side is able to parse the sentence completely.
+
+The NLTK library in Python will show the parse tree as:
+
+![title](img/cfg6.JPG)
+
+Note that the **recursive descent parser** is a type of top-down parser, though the terms are sometimes used equivalently. You can read more about the recursive descent parser in the additional reading material below.
+
+Let’s understand the problem of **left-recursion** using an example:<br/>
+**Sentence**: The man saw a car.<br/>
+**Grammar**: <br/>
+S -> NP VP<br/>
+NP -> DT N<br/>
+VP -> VP NP| V<br/>
+DT -> the<br/>
+N -> man<br/>
+
+The top-down parse structure of the sentence will look as follows:
+
+![title](img/top-down.JPG)
+
+The rule VP -> VP NP runs into an **infinite loop** and no parse tree will be obtained. This is the problem of left recursion. This problem can be resolved using the bottom-up approach, which you'll learn in the next segment. 
+
+For now, let's look at Python implementation of the top-down Parse tree. The following Jupyter notebook is attached for your reference.
+
+[Top-down Parsing](dataset/Top+Down+parsing.ipynb)
+
+### Additional Reading
+Although the naive implementation of the recursive descent parser suffers from the problem of left-recursion, alternate algorithms have been suggested which can handle this problem. The algorithms use predictive techniques to 'look ahead' and avoid going down the infinite loop. Read more about it here(https://en.wikipedia.org/wiki/Recursive_descent_parser).
+
+### Bottom-Up Parsing
+In the previous segment, you studied the top-down parser and the problem of left-recursion. In this segment, you'll learn another approach to parse a sentence- the **bottom-up approach**.
+
+The bottom-up approach reduces each terminal word to a production rule, i.e. reduces the right-hand-side of the grammar to the left-hand-side. It continues the reduction process until the entire sentence has been reduced to the start symbol S. 
+
+There are many types of bottom-up parsers. The **shift-reduce parser** is one of the most commonly used bottom-up parsing algorithm. Let's consider the following sentence and grammar:
+
+**Sentence**: The angry bear chased the squirrel
+
+![title](img/grammer.JPG)
+
+Bottom-up parsing is done using the **shift-reduce algorithm**. As an example, we will take the sentence "The angry bear chased the squirrel" and use some production rules to implement the shift-reduce algorithm.
+
+![title](img/bottom-up.JPG)
+
+To summarise, the shift-reduce parser parses the words of the sentence one-by-one either by **shifting** a word to the stack or **reducing** the stack by using the production rules. 
+
+In the next segment, we'll see the Python implementation of the shift-reduce parser.  The following Jupyter notebook is attached for your reference.
+
+[Shift Reduce Parser](dataset/Bottom+Up+parsing.ipynb)
+
+### Ambiguities in Parse Trees
+
+In one of the questions above, you saw that the sentence "The man caught fish with a net" can have two valid parses. In one parse, the prepositional phrase "with a net" is associated with "The man" whereas in another parse it is associated with "fish".
+
+Now, from common sense, you know that the phrase "with a net" is associated with "The man", i.e. it is the man who has the net, not the fish. But how do you make the algorithm use this common sense?
+
+Well, your common sense arises from the fact that it is more likely that the man has the net, not the fish. As always, the way to make algorithms understand the concept of likelihood is to use **probabilistic techniques**.
+
+In the next segment, you will learn **probabilistic context-free grammars or PCFGs**.
+
+### Probabilistic CFG
+Until now, you have seen sentences which resulted in a single parse tree. But what if you encounter an ambiguous sentence and grammar which could lead to multiple parse trees? 
+
+Consider the following sentence: “Look at the man with one eye.” There are two possible meanings of the sentence:
+
+Look at the man using only one of your eyes
+
+![title](img/probablistic_cfg.JPG)
+
+![title](img/probablistic_cfg1.JPG)
+
+Similarly, in the previous segment, you had built two parse trees for another ambiguous sentence - "the man caught fish with a net". 
+
+In general, since natural languages are inherently ambiguous (at least for computers to understand), there are often cases where multiple parse trees are possible. In such cases, we need a way to make the algorithms figure out the most likely parse tree.
+
+![title](img/ambiguity.JPG)
+
+You saw examples of sentences where ambiguities lead to multiple parse trees. Note that both top-down and bottom-up techniques will generate multiple parse trees. None of these trees is grammatically incorrect, but some of these are improbable to occur in normal conversations.  To identify which of these trees is the most probable, we use the notion of **probability**.
+
+**Probabilistic Context-Free Grammars (PCFGs)** are used when we want to find the most probable parsed structure of the sentence. PCFGs are grammar rules, similar to what you have seen, along with probabilities associated with each production rule. For example, an example production rule is as follows:
+
+NP -> Det N (0.5) | N (0.3) |N PP (0.2)
+
+It means that the probability of an NP breaking down to a ‘Det N’ is 0.50, to an 'N' is 0.30 and to an ‘N PP’ is 0.20. Note that the sum of probabilities is 1.00.
+
+![title](img/pcfg.JPG)
+
+Let’s now learn how to implement PCFG in Python. Jupyter notebook  has been attached for your reference.
+
+[PCFG Python-Code](dataset/Parsing+using+PCFG.ipynb)
+
+You studied the idea of CFGs and PCFGs and how to build PCFG-based parse trees using NLTK . Apart from what we have covered, there are a few other non-trivial problems to address in PCFGs, one being that of computing the probabilities of production rules. 
+
+The solution is to **learn these probabilities** from some pre-tagged corpus where a large number of sentences have been parsed manually. Having access to such a corpus (such as the Penn Treebank), one can compute the probabilities by counting the frequencies of production rules. This is similar to how we computed the transition and emission probabilities in HMMs.
+
+#### Additional Resources
+For a further detailed study of PCFGs, refer to chapter 12(https://web.stanford.edu/~jurafsky/slp3/12.pdf), Statistical Parsing,of the book 'Speech and Language Processing, Daniel Jurafsky & James H. Martin'.
+
+### Chomsky Normal Form
+Until now, we have defined multiple CFGs. You would have noticed that some CFGs are of the form A > B where both A and B are non-terminals (e.g. Nom > Noun), some are of the form A > B where A is a non-terminal while B is a terminal (Det > the), etc.
+
+It is often useful to use a **standardised version of production rules** by converting a grammar to what is called the **Chomsky Normal Form (CNF)**.  The CNF, proposed by the linguist Noam Chomsky, is a normalized version of the CFG with a standard set of rules defining how production rule must be written.
+
+Let's see the rules required to convert a CFG to the corresponding Chomsky Normal Form. 
+
+Let’s summarise the three forms of CNF rules can be written:
+1. A -> B C
+2. A -> a
+3. S -> ε
+
+A, B, C are non-terminals (POS tags), a is a terminal (term), S is the start symbol of the grammar and ε is the null string.
+
+The table below shows some examples for converting CFGs to the CNF:
+
+![title](img/cnf.JPG)
+
+### Dependency Parsing
+Until now, we have been discussing constituency parsing where groups of words or constituencies comprise of the basic structure of a parse tree. In this section, we will introduce **an alternate paradigm** of grammar called **dependency grammar** and related dependency parsing techniques.
+
+In dependency grammar, constituencies (such as NP, VP etc.) do not form the basic elements of grammar, but rather dependencies are established between the words themselves. For example, consider the following dependency parse tree of the sentence "man saw dogs" created using the displaCy dependency visualiser(https://explosion.ai/demos/displacy?text=man%20saw%20dogs&model=en_core_web_sm&cpu=1&cph=1):
+
+![title](img/dependencyparse1.JPG)
+
+The dependencies can be read as follows: 'man' is the **subject** of the sentence (the one who is doing something); 'saw' is the main **verb** (something that is being done); while 'dogs' is the **object** of 'saw' (to whom something is being done).
+
+Notice that there is no notion of phrases or constituencies, but rather relationships are established between the words themselves.
+
+The basic idea of **Dependency Parsing** is based on the fact that each sentence is about something,  and usually contains a subject (the doer), a verb (what is being done) and an object (to whom something is being done).
+
+In general, **Subject-Verb-Object** (SVO) is the basic word order in present-day English (which is said to follow a 'rigid word order' form ). Of course, many sentences are far more complex to fall into this simplified SVO structure, though sophisticated dependency parsing techniques are able to handle most of them.
+
+### Fixed and Free-Word-Order Languages
+Modern languages can be divided into two broad types - **fixed-word order** and **free-word order**. 
+
+To understand the nature of languages, consider the following English sentences:
+
+![title](img/dependencyparse2.JPG)
+
+Like English, many languages follow the SVO word order, as shown in the examples above. Such languages are called **fixed-word order** languages.
+
+On the other hand, consider the following Hindi sentences:
+
+![title](img/hindi.JPG)
+
+The two sentences in Hindi have the same meaning though they are written in two different word orders (SOV, OSV). There are fewer languages like Hindi (such as Spanish) which allow a **free-order** of words. 
+
+Let us see concept of ‘free’ and ‘fixed’ word order languages, why CFGs cannot handle free word order languages, and the concept of 'dependencies'. 
+
+You saw that free word order languages such as Hindi are difficult to parse using constituency parsing techniques. This is because, in such free-word-order languages, the order of words/constituents may change significantly while keeping the meaning exactly the same. It is thus difficult to fit the sentences into the finite set of production rules that CFGs offer.
+
+You also saw how dependencies in a sentence are defined using the elements Subject-Verb-Object.
+
+The following table shows examples of three types of sentences - declarative, interrogative, and imperative:
+
+![title](img/typeofsentences.JPG)
+
+### Universal Dependencies
+Apart from dependencies defined in the form of subject-verb-object, there's a non-exhaustive list of dependency relationships. Let's look at how a dependency parse structure looks like and how dependencies are established among the words using what are called **universal dependencies**.
+
+![title](img/dependencygrammar.JPG)
+
+![title](img/dependencygrammar1.JPG)
+
+![title](img/dependencygrammar2.JPG)
+
+![title](img/dependencygrammar3.JPG)
+
+![title](img/standfordparser.png)
+
+#### Elements of Dependency Grammar
+Let’s understand Dependency Parsing in a little more detail using some examples. Consider the declarative sentence: "The man jumped from the moving train into the river".
+
+In a dependency parse, we start from the **root** of the sentence, which is often a verb. In the example above, the root is the word 'jumped'. The intuition for the root is that it is the main word that describes the 'aboutness' of a sentence. Although the sentence is also about 'The man', 'the moving train' and 'the river', it is most strongly about the fact someone 'jumped' from somewhere into something.
+
+As you saw in the lecture, dependencies are represented as labelled arcs of the form h → d (l) where 'h' is called the “head” of the dependency, 'd' is the “dependent” and l is the “label” assigned to the arc. 
+
+There is a non-exhaustive list of dependency roles. The most commonly used labels are mentioned in the following downloadable document.
+
+[Dependency Parsing](dataset/Dependency+Parsing.docx)
+
+You can read more about labels from the following URL.(https://universaldependencies.org/en/dep/)
+
+Please go through the document so that it'll be easier for you to understand the dependencies mentioned later. Let’s now understand the dependency graph using a small sentence. 
+
+Sentence: "The fat man ate cake."
+
+The **root verb**, also called the **head** of the sentence, is the verb ‘ate’ since it describes what the sentence is about. All the other words are dependent on the root word 'ate', as shown by the arcs directed from 'ate' to the other words.
+
+![title](img/dependencyparse4.JPG)
+
+The dependencies from the root to the other words are as follows. 
+* **nsubj** (man) is the nominal subject of the verb 'ate' 
+* The word 'fat’ modifies the word 'man' and is the **adjective modifier (amod)** of nsubj
+* The word 'the' is a determiner associated with the word 'man'
+* The **direct object** of the verb (**dobj**) is 'cake'
+
+Let’s now understand the dependency parse tree for the sentence shown in the lecture:
+Sentence: “Economic news had little effect on financial markets”
+
+You can visualise the dependency parse of this sentence here(https://explosion.ai/demos/displacy?text=Economic%20news%20had%20little%20effect%20on%20financial%20markets&model=en_core_web_sm&cpu=0&cph=0). Also, in the parse shown below, we have merged the phrases such as 'Economic news', 'little effect' etc.
+
+![title](img/dependencyparse5.JPG)
+
+Let’s identify the role of each word one by one, starting with the **root verb**
+* The word 'had' is the root 
+* The phrase ‘Economic news’ is the nominal subject (nsubj)
+* The phrase 'little effect' is the direct object (dobj) of the verb 'had'
+* The word 'on' is a preposition associated with 'little effect'
+* The noun phrase 'financial markets' is the object of 'on' 
+
+![title](img/dependencyparse6.JPG)
+
+#### Additional Reading
+You can read more on Dependency Parsing from Chapter 13, Dependency Parsing, Speech and Language Processing. Daniel Jurafsky & James H. Martin(https://web.stanford.edu/~jurafsky/slp3/13.pdf).
+
+## Information Extraction
+
+### Introduction
+Even though textual data is widely available, the complexity of natural language makes it extremely difficult to extract useful information from text. In this session, you’ll learn to build an **Information Extraction (IE)** system that can extract structured data from unstructured textual data. A key component in information extraction systems is **Named-Entity-Recognition (NER)**. You’ll learn various techniques and models for building NER systems in this session.
+
+Let’s say you are making a conversational flight-booking system, which can show relevant flights when given a natural-language query such as “Please show me all morning flights from Bangalore to Mumbai on next Monday.” For the system to be able to process this query, it has to extract useful **named entities** from the unstructured text query and convert them to a structured format, such as the following dictionary/JSON object:
+
+![title](img/ner.JPG)
