@@ -692,3 +692,198 @@ Even though textual data is widely available, the complexity of natural language
 Let’s say you are making a conversational flight-booking system, which can show relevant flights when given a natural-language query such as “Please show me all morning flights from Bangalore to Mumbai on next Monday.” For the system to be able to process this query, it has to extract useful **named entities** from the unstructured text query and convert them to a structured format, such as the following dictionary/JSON object:
 
 ![title](img/ner.JPG)
+
+Using these entities, you could query a database and get all relevant flight results. In general, named entities refer to names of people, organizations (Google), places (India, Mumbai), specific dates and time (Monday, 8 pm) etc.
+
+We’ll use the **ATIS (Airline Travel Information Systems)** dataset to build an IE system. The ATIS dataset consists of English language queries for booking (or requesting information about) flights in the US. In the following lecture, Ashish will provide an overview of this session and the ATIS dataset.
+
+You can download the ATIS dataset from here:
+
+[ATIS Dataset](dataset/ATIS+dataset.zip)
+
+We’ll use the following Jupyter notebook for the entire session.
+
+[Information Extraction(IE) ATIS Flight Booking](dataset/Information_Extraction(IE)_ATIS_Flight_Booking_Dataset.ipynb)
+
+### Understanding the ATIS data
+The ATIS dataset has five zip files. Each zip file has three datasets: train, test and validation, and a dictionary.
+
+**NOTE**: In the recent version, RandomizedSearchCV is now under sklearn.model_selection, and not any more under sklearn.grid_search
+
+All the three datasets are in form of tuples containing three lists. The first list is the tokenized words of the queries, encoded by integers such as 554, 194, 268 ... and so on. For e.g. the first three integers 554, 194, 268 are encoded values of the words 'what', 'flights', 'leave' etc. Ignore the second list. The third list contains the (encoded) label of each word.
+
+Labels are similar to POS tags, where instead of using noun, verb, etc, we’ll use **IOB (inside-outside-beginning)** tags of entities like flight-time, source-city, etc. You’ll learn about the IOB tagging in the next segment.
+
+### Decoding the list
+Let’s decode the lists of words and labels using the dictionaries provided in the ATIS data set. In the upcoming lecture, you’ll see how to decode using the dictionary provided in the dataset.
+
+So, there are three dictionaries in ATIS dataset, out of which two are required ‘**words2idx**’, (which will convert the first list to words (actual words of queries)), and ‘**labels2idx**’ (which will convert the third list to labels)
+
+You also saw some sample queries asking information about the flights. The structure of each query is quite different. So, you’ll learn how to build a machine learning model which could fit some structure to these queries and derive relevant entities from it.
+
+### IOB Labels
+The next lecture focuses on decoding using the dictionary of labels and IOB (or BIO) labelling. IOB labelling (also called BIO in some texts) is a standard way of labelling named entities.
+
+**IOB (or BIO) method** tags each token in the sentence with one of the three labels: I - inside (the entity), **O- outside (the entity)** and **B - beginning (of entity)**. You saw that IOB labeling is especially helpful if the entities contain multiple words. We would want our system to read words like ‘Air India’, ‘New Delhi’, etc, as single entities.
+
+![title](img/entity.JPG)
+
+Any entity with more than 2 words such as ‘Dallas Fort Worth’, ‘Smoke House Deli’, the first word of the entity would be labeled as B-entity and other words in it would be labeled as I-entity, rest would be labeled as O.
+
+### Information Extraction
+Natural language is highly unstructured and complex, making it difficult for any system to process it. **Information Extraction (IE)** is the task of retrieving structured information from unstructured text data. IE is used in many applications such as **conversational** chatbots, extracting information from encyclopedias (such as Wikipedia), etc. Let’s look at some more applications of IE.
+
+Information Extraction is used in a wide variety of NLP applications, such as extracting structured summaries from large corpora such as Wikipedia, conversational agents (chatbots), etc. In fact, modern virtual assistants such as Apple’s Siri, Amazon’s Alexa, Google Assistant etc. use sophisticated IE systems to extract information from large encyclopedias.
+
+However, no matter how complex the IE task, there are some common steps (or subtasks) which form the pipeline of almost all IE systems.
+
+Next, we’ll study the major steps in an **IE pipeline** and build them one by one. Most IE pipelines start with the usual text preprocessing steps - sentence segmentation, word tokenisation and POS tagging. After preprocessing, the common tasks are **Named Entity Recognition (NER)**, and optionally relation recognition and record linkage. A generic IE pipeline looks something like this:
+
+![title](img/ie_pipeline.JPG)
+
+NER is arguably the most important and non-trivial task in the pipeline. Next, we will discuss all elements of the pipeline:
+
+To summarise, a generic IE pipeline is as follows:
+1. **Preprocessing**
+    1. Sentence Tokenization: sequence segmentation of text.
+    2. Word Tokenization: breaks down sentences into tokens
+    3. POS tagging - assigning POS tags to the tokens. The POS tags can be helpful in defining what words could form an entity.
+
+2. **Entity Recognition**
+    1. Rule-based models
+    2. Probabilistic models
+
+In entity recognition, every token is tagged with an IOB label and then nearby tokens are combined together basis their labels.
+1. **Relation Recognition** is the task of identifying relationships between the named entities. Using entity recognition, we can identify places (pl), organisations (o), persons (p). Relation recognition will find the relation between (pl,o), such that o is located in pl. Or between (o,p), such that p is working in o, etc.
+2. **Record Linkage** refers to the task of linking two or more records that belong to the same entity. For example, Bangalore and Bengaluru refer to the same entity.
+
+Next, we will implement the first few preprocessing steps on the airlines' dataset.
+
+#### Additional Reading
+* **Relation Recognition**: You can read further on this topic from here(http://www.nltk.org/book/ch07.html). (Refer to the 6th segment)
+* **Record Linkage**: Refer to the record linkage toolkit in Python for further reading (https://recordlinkage.readthedocs.io/en/latest/about.html#what-is-record-linkage).
+
+### POS Tagging
+Since the ATIS dataset is available in the form of individual tokens, the initial preprocessing steps (-tokenisation etc.) are not required. So, we move to **POS tagging** as the first preprocessing task. POS tagging can give a good intuition of what words could form an entity.
+
+The main objective of this session is to learn to accurately assign IOB labels to the tokens. It is similar to POS tagging in that it is a **sequence labeling task**, where instead of parts-of-speech tags, we want to assign IOB labels to words.
+
+Named Entity Recognition task identifies **‘entities’** in the text. Entities could refer to names of people, organizations (e.g. Air India, United Airlines), places/cities (Mumbai, Chicago), dates and time points (May, Wednesday, morning flight), numbers of specific types (e.g. money - 5000 INR) etc. POS tagging in itself won’t be able to identify such word entities. Therefore, IOB labeling is required. So, NER task is to **predict IOB labels of each word**.
+
+To summarise, NER is a sequence labelling task where the labels are the IOB labels. There are different approaches using which we can predict the IOB labels:
+1. **Rule-based techniques**:
+    * Regular Expression-Based Rules
+    * Chunking
+
+2. **Probabilistic models**
+    * Unigram and Bigram models
+    * Naive Bayes Classifier, Decision Trees, SVMs etc.
+    * Conditional Random Fields (CRFs)
+
+You saw that the NLTK POS tagger is not accurate - any word after ‘to’ gets tagged as a verb. For e.g. in all the queries of the form ‘.. from city_1 to city_2’, city_2 is getting tagged as a verb. Think about why this might be happening.
+
+To correct the POS tags manually, you can use the **backoff** option in the nltk.tag() method.  The backoff option allows you to chain multiple taggers together. If one tagger doesn’t know how to tag a word, it can back off to another one.
+
+It is difficult to get 100% accuracy in POS tagging. Therefore, in this exercise, we’ll stick to the NLTK POS tagger and use it for predicting the IOB labels. Also, while building classifiers for NER in the next sections, you’ll see that POS tags form just one ‘feature’ for prediction, we use other features as well (such as morphology of words, the words themselves, other derived features etc.). We’ll see these features in later segments.
+
+Now, for each word, we have the POS tag. The final dataset is in a 3-tuple form (word, POS tag, IOB label). But NLTK doesn’t process the data in form of tuples. So, these tuples are converted to trees using the method conlltags2tree() in NLTK.
+
+You can read more about this function from the following link: https://stackoverflow.com/questions/40879520/nltk-convert-a-chunked-tree-into-a-list-iob-tagging
+
+### Rule-Based Models
+We have discussed that NER is a sequence prediction task and that there are broadly two types of models for NER - **rule-based techniques and probabilistic models**.
+
+Let’s start with the simpler rule-based models for entity recognition. Rule-based taggers use the commonly observed rules in the text to identify the tag of each word. They are similar to the rule-based POS taggers which use rules such as these - VBG mostly ends with ‘-ing’, VBD is likely to end with ‘ed’ etc.
+
+### Chunking
+Rule-based models for NER tasks are based on the technique called **chunking**. Chunking is a commonly used **shallow parsing technique** used to chunk words that constitute some meaningful phrase in the sentence. Chunks are **non-overlapping** subsets of words in a sentence that form a meaningful 'entity'.  For example, a **noun phrase chunk** (NP chunk) is commonly used in NER tasks to identify groups of words that correspond to some 'entity'. For example, in the following sentence, there are two noun phrase chunks:
+
+Sentence: He bought a new car from the Maruti Suzuki showroom.<br/>
+**Noun phrase chunks** - a new car, the Maruti Suzuki showroom
+
+Note that a key difference between a noun phrase (NP) used in constituency parsing and a **noun phrase chunk** is that a chunk does not include any other noun phrase chunk within it, i.e. NP chunks are non-overlapping. This is also why chunking is a shallow parsing technique which falls somewhere between POS tagging and constituency parsing.
+
+In general, the idea of chunking in the context of entity recognition is simple - since we know that most entities are nouns and noun phrases, we can write rules to extract these noun phrases and hopefully extract a large number of named entities (e.g. Maruti Suzuki, a new car, as shown above).
+
+Let’s take some more examples of chunking done using regular expressions:
+
+Sentence: Ram booked the flight.<br/>
+Noun phrase chunks: 'Ram', 'the flight'
+
+One possible grammar to chunk the sentence is as follows:
+Grammar: 'NP_chunk: {<DT>?<NN>}'
+
+Note that in NLTK, to get the IOB labels of the parsed sentence, you can use the ‘tree2conlltags()’ method.
+
+#### Applying Chunking to the Flight Reservation Dataset
+Now, let’s apply the concept of chunking to the ATIS dataset.
+
+In the training set, we have the word, the entity and the POS tag of each word. Let’s understand how we can use chunk grammar to extract chunks. Note that our dataset contains far more types of chunks than just noun phrase chunks, such as ‘round trip’, ‘cost-relative’, ‘fromloc-city-name’ etc. A sample query from the training set looks like the following:
+
+![title](img/chunking.JPG)
+
+The word after ‘to’ is getting tagged as a verb, whereas it is actually a noun. You’ll see this issue in many queries in the dataset. Let’s write a regular expression such that is able to identify:
+
+1. Denver as ‘**toloc.city_name**’ chunk,
+2. Baltimore as ‘**fromloc.city_name**’ chunk,
+3. round trips as ‘**round_trip**’ chunk,
+4. Cheapest as ‘**cost_relative**’ chunk
+
+![title](img/chunking1.JPG)
+
+Rule-based systems become more complex and difficult to maintain as we keep on increasing the rules. 
+
+The alternative, in this case, is to use probabilistic machine learning models.
+
+### Probabilistic Models for Entity Recognition
+In this segment, we’ll use the following two probabilistic models to get the most probable IOB tags for words. Recall that you have studied the unigram and bigram models for POS tagging earlier:
+1. **Unigram chunker** computes the unigram probabilities P(IOB label | pos) for each word and assigns the label that is most likely for the POS tag.
+2. **Bigram chunker** works similar to a unigram chunker, the only difference being that now the probability of a POS tag having an IOB label is computed using the current and the previous POS tags, i.e. P(label | pos, prev_pos).
+
+**Note**: We have used Python classes in the code. If you are not familiar with classes and object-oriented-programming in general, we highly recommend going studying them briefly. The additional resources provided below will help you study basics of classes and OOPs in Python. Besides, you should be able to rewrite the code using functions only.
+
+Another way to identify named entities (like cities and states) is to look up a dictionary or a **gazetteer**. A gazetteer is a geographical directory which stores data regarding the names of geographical entities (cities, states, countries) and some other features related to the geographies. An example gazetteer file for the US is given below.
+
+Data download URL: https://raw.githubusercontent.com/grammakov/USA-cities-and-states/master/us_cities_states_counties.csv
+
+In the next section, you’ll learn to use this lookup function on Gazetteer as a feature to predict IOB labels.
+
+#### Additional Resources
+Corey Schafer's tutorials on classes and OOPs in Python(https://www.youtube.com/watch?v=ZDa-Z5JzLYM) (highly recommended for beginners in classes and OOPs)
+Official Python documentation of classes(https://docs.python.org/3/tutorial/classes.html) (recommended only after going through a gentler introduction such as the one above)
+
+### Naive Bayes Classifier for NER
+Till now, we have covered rule-based models, unigram and bigram models for predicting the IOB labels. In this segment, you’ll learn to **build a machine learning model to predict IOB tags of the words**.
+
+Just like machine learning classification models, we can have features for sequence labelling task. Features could be the morphology (or shape) of the word such as whether the word is upper/lowercase, POS tags of the words in the neighbourhood, whether the word is present in the gazetteer (i.e. word_is_city, word_is_state), etc.  
+
+In this segment, we’ll take up **Naive Bayes Classifier** to predict labels of the words. We’ll take into account features such as the word itself, POS tag of the word and POS tag of the previous word, whether the word is the first or last word of the sentence, whether the word is in the gazetteer etc. Let’s now go through the Python implementation of the extracting the features:
+
+So, the function npchunk_features() will return the following features for each word in a dictionary:
+1. POS tag of the word
+2. Previous POS tag
+3. Current word
+4. Whether the word is in gazetteer as ‘City’
+5. Whether the word is in gazetteer as ‘State’
+6. Whether the word is in gazetteer as ‘County’
+
+Now, each word contains all the above features. We’ll build a **Naive Bayes classifier** using these features. It’s recommended that you read the code of the Naive Bayes Classifier. Also, note that we are using the Naive Bayes implementation of the NLTK library rather than sklearn.
+
+So, the Naive Bayes classifier performed better than the rule-based, unigram or bigram chunker models. These results improved marginally when more features are created.
+
+Before moving to the next segment, we recommend that you go through the code of the Naive Bayes classifier in the notebook.
+
+#### Additional Reading
+* You can also use the Naive Bayes classifier to predict POS tags for the word in a sentence. Refer to section 1.6 of the following link: https://www.nltk.org/book/ch06.html
+* Read more on why Naive Bayes perform well even when the features are dependent on each other(https://stats.stackexchange.com/questions/23490/why-do-naive-bayesian-classifiers-perform-so-well).
+
+### Decision Tree Classifiers for NER
+In this segment, you’ll learn to use Decision Trees as the classifier for the NER task. The features extraction process is exactly the same as that used in the Naive Bayes classifier.
+
+#### Additional Reading
+You can also experiment with the hyperparameters of the decision tree classifier. To read more on that refer to the NLTK documentation here(https://www.nltk.org/api/nltk.classify.html#module-nltk.classify.decisiontree).
+
+### HMM and IOB labelling
+You have studied HMMs in detail and have also used them for building POS taggers. In general, HMMs can be used for any sequence classification task, such as NER. However, many NER tasks and datasets are far more complex than tasks such as POS tagging, and therefore, more sophisticated sequence models have been developed and widely accepted in the NLP community.
+
+There are limitations of HMMs and they are not preferred for the NER task we are trying to solve.
